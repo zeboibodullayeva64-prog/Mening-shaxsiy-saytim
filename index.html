@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="uz" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shaxsiy Portfolio — Professional Veb-sayt</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        /* Tahrirlash rejimi yoqilganda matnlarni ajratib ko'rsatish */
+        .editable-active [data-editable] {
+            outline: 2px dashed #3b82f6;
+            outline-offset: 4px;
+            border-radius: 6px;
+            cursor: text;
+            transition: all 0.2s;
+        }
+        .editable-active [data-editable]:hover,
+        .editable-active [data-editable]:focus {
+            outline: 2px solid #2563eb;
+            background-color: rgba(59, 130, 246, 0.08);
+        }
+        /* Gradient matn */
+        .text-gradient {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Profil rasmi uchun suzuvchi animatsiya */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+            animation: float 5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- Bildirishnoma (Toast) konteyneri -->
+    <div id="toast-container" class="fixed top-20 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- Tahrirlash rejimi haqida yuqori eslatma paneli -->
+    <div id="edit-banner" class="hidden bg-blue-600 text-white text-xs sm:text-sm py-2.5 px-4 text-center font-medium sticky top-0 z-50 shadow-md flex items-center justify-center gap-3 flex-wrap">
+        <span><i class="fa-solid fa-pen-to-square mr-1.5"></i> <strong>Tahrirlash rejimi yoqilgan:</strong> Istalgan matn ustiga bosib o'zgartiring!</span>
+        <div class="flex gap-2">
+            <button onclick="saveAllEdits()" class="bg-white text-blue-700 hover:bg-blue-50 px-3 py-1 rounded-lg font-semibold text-xs transition shadow-sm">
+                <i class="fa-solid fa-check mr-1"></i> Saqlash
+            </button>
+            <button onclick="resetPortfolioData()" class="bg-blue-800 hover:bg-blue-900 text-white px-3 py-1 rounded-lg font-medium text-xs transition">
+                <i class="fa-solid fa-rotate-left mr-1"></i> Asl holiga qaytarish
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. NAVIGATSIYA PANELI (HEADER) -->
+    <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+            <!-- Logotip / Ism -->
+            <a href="#" class="flex items-center gap-2.5 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-blue-500/20 group-hover:scale-105 transition">
+                    <span id="logo-initial">A</span>
+                </div>
+                <span data-editable="brandName" class="font-bold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white">Azizbek.uz</span>
+            </a>
+
+            <!-- Desktop menyu -->
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300">
+                <a href="#about" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Men haqimda</a>
+                <a href="#skills" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Ko'nikmalar</a>
+                <a href="#projects" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Loyihalar</a>
+                <a href="#contact" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Bog'lanish</a>
+            </nav>
+
+            <!-- O'ng tarafdagi boshqaruv tugmalari -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Tahrirlash rejimi tugmasi -->
+                <button onclick="toggleEditMode()" id="edit-mode-btn" class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-400 dark:hover:bg-blue-900/60 border border-blue-200/60 dark:border-blue-800/60 transition" title="Sayt matnlarini tahrirlash">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span class="hidden sm:inline" id="edit-btn-text">Tahrirlash</span>
+                </button>
+
+                <!-- Tungi / Kunduzgi rejim tugmasi -->
+                <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition" title="Mavzuni o'zgartirish">
+                    <i id="theme-icon" class="fa-solid fa-moon text-base"></i>
+                </button>
+
+                <!-- Mobil menyu tugmasi -->
+                <button onclick="toggleMobileMenu()" class="md:hidden w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobil menyu paneli -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-2 pb-4 space-y-1">
+            <a href="#about" onclick="toggleMobileMenu()" class="block px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Men haqimda</a>
+            <a href="#skills" onclick="toggleMobileMenu()" class="block px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Ko'nikmalar</a>
+            <a href="#projects" onclick="toggleMobileMenu()" class="block px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Loyihalar</a>
+            <a href="#contact" onclick="toggleMobileMenu()" class="block px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Bog'lanish</a>
+        </div>
+    </header>
+
+    <!-- 2. ASOSIY EKRAN (HERO SECTION) -->
+    <section class="relative overflow-hidden pt-12 pb-20 lg:pt-24 lg:pb-28">
+        <!-- Orqa fon bezaklari -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-gradient-to-tr from-blue-500/10 via-indigo-500/10 to-cyan-500/10 blur-3xl -z-10 rounded-full"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <!-- Chap taraf: Matnlar -->
+                <div class="lg:col-span-7 text-center lg:text-left space-y-6">
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/70 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs sm:text-sm font-medium">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span data-editable="heroBadge">Assalomu alaykum! Shaxsiy sahifamga xush kelibsiz</span>
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+                        Men <span data-editable="fullName" class="text-gradient">Azizbek Karimov</span>
+                    </h1>
+
+                    <h2 data-editable="profession" class="text-xl sm:text-2xl font-semibold text-slate-700 dark:text-slate-300">
+                        Bosh Buxgalter & Moliyaviy Tahlilchi
+                    </h2>
+
+                    <p data-editable="heroDesc" class="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                        Korxonalar moliyasini tizimlashtirish, soliq hisobotlarini xatosiz yuritish va biznes samaradorligini oshirish bo'yicha 6 yildan ortiq amaliy tajribaga ega mutaxassisman.
+                    </p>
+
+                    <!-- Harakat tugmalari -->
+                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+                        <a href="#contact" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Bog'lanish
+                        </a>
+                        <a href="#projects" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 font-semibold text-sm transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-briefcase text-blue-600 dark:text-blue-400"></i> Loyihalarni ko'rish
+                        </a>
+                    </div>
+
+                    <!-- Ijtimoiy tarmoq havolalari -->
+                    <div class="flex items-center justify-center lg:justify-start gap-4 pt-4 text-slate-500 dark:text-slate-400">
+                        <a href="#contact" class="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:text-blue-600 dark:hover:text-blue-400 hover:-translate-y-0.5 transition">
+                            <i class="fa-brands fa-telegram text-lg"></i>
+                        </a>
+                        <a href="#contact" class="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:text-blue-600 dark:hover:text-blue-400 hover:-translate-y-0.5 transition">
+                            <i class="fa-brands fa-linkedin-in text-lg"></i>
+                        </a>
+                        <a href="#contact" class="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:text-pink-600 dark:hover:text-pink-400 hover:-translate-y-0.5 transition">
+                            <i class="fa-brands fa-instagram text-lg"></i>
+                        </a>
+                        <a href="#contact" class="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:text-slate-900 dark:hover:text-white hover:-translate-y-0.5 transition">
+                            <i class="fa-brands fa-github text-lg"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- O'ng taraf: Profil rasmi ramkasi -->
+                <div class="lg:col-span-5 flex justify-center">
+                    <div class="relative w-72 h-72 sm:w-80 sm:h-80 lg:w-96 lg:h-96 animate-float">
+                        <!-- Orqa dekorativ doira -->
+                        <div class="absolute inset-0 rounded-3xl bg-gradient-to-tr from-blue-600 to-cyan-400 rotate-6 opacity-20 dark:opacity-30"></div>
+                        <div class="absolute inset-0 rounded-3xl bg-gradient-to-bl from-indigo-600 to-blue-500 -rotate-3 opacity-20 dark:opacity-30"></div>
+                        
+                        <!-- Rasm konteyneri -->
+                        <div class="relative w-full h-full rounded-3xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl bg-slate-200 dark:bg-slate-800 group">
+                            <img id="profile-img" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" onerror="this.src='https://placehold.co/600x600/1e293b/ffffff?text=Profil+Rasmi'" alt="Profil rasmi" class="w-full h-full object-cover object-center">
+                            
+                            <!-- Rasm URL manzilini almashtirish tugmasi -->
+                            <button onclick="changeProfileImage()" class="absolute bottom-3 right-3 bg-slate-900/80 hover:bg-blue-600 text-white text-xs px-3 py-2 rounded-xl backdrop-blur-sm opacity-0 group-hover:opacity-100 transition flex items-center gap-1.5 shadow-lg">
+                                <i class="fa-solid fa-camera"></i> Rasmni almashtirish
+                            </button>
+                        </div>
+
+                        <!-- Suzuvchi kichik karta -->
+                        <div class="absolute -bottom-5 -left-4 sm:-left-6 bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                <i class="fa-solid fa-award text-lg"></i>
+                            </div>
+                            <div>
+                                <div data-editable="badgeStat" class="font-bold text-sm text-slate-900 dark:text-white">6+ Yillik Tajriba</div>
+                                <div data-editable="badgeSub" class="text-xs text-slate-500 dark:text-slate-400">Sertifikatlangan mutaxassis</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. MEN HAQIMDA (ABOUT ME) -->
+    <section id="about" class="py-20 bg-white dark:bg-slate-900/60 border-y border-slate-200/60 dark:border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-14">
+                <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Tanishuv</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mt-2">Men haqimda</h2>
+                <div class="w-16 h-1 bg-blue-600 mx-auto mt-4 rounded-full"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                <!-- Tarjimai hol -->
+                <div class="lg:col-span-7 space-y-5">
+                    <h3 data-editable="aboutTitle" class="text-2xl font-bold text-slate-900 dark:text-white">
+                        Aniqlik, mas'uliyat va zamonaviy yondashuv — mening asosiy tamoyillarim
+                    </h3>
+                    <p data-editable="aboutText1" class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Men Toshkent Moliya Institutini tamomlaganman va faoliyatim davomida turli savdo, ishlab chiqarish hamda IT kompaniyalarning moliyaviy boshqaruvini muvaffaqiyatli olib borganman. 1C:Buxgalteriya, Didox, Soliq.uz va Excel tahlil vositalarida yuqori darajada ishlayman.
+                    </p>
+                    <p data-editable="aboutText2" class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Maqsadim — tadbirkorlar uchun shaffof moliyaviy tizim qurish, soliq yukini qonuniy optimallashtirish va raqamli texnologiyalar yordamida hisob-kitob jarayonlarini avtomatlashtirishdir.
+                    </p>
+
+                    <!-- Shaxsiy ma'lumotlar jadvali -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60">
+                            <span class="text-xs text-slate-400 block">Ism-familiya:</span>
+                            <span data-editable="infoName" class="font-semibold text-sm text-slate-800 dark:text-slate-200">Azizbek Karimov</span>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60">
+                            <span class="text-xs text-slate-400 block">Manzil:</span>
+                            <span data-editable="infoCity" class="font-semibold text-sm text-slate-800 dark:text-slate-200">Toshkent shahri, O'zbekiston</span>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60">
+                            <span class="text-xs text-slate-400 block">Ma'lumoti:</span>
+                            <span data-editable="infoEdu" class="font-semibold text-sm text-slate-800 dark:text-slate-200">Oliy (Moliya va Audit)</span>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60">
+                            <span class="text-xs text-slate-400 block">Tillar:</span>
+                            <span data-editable="infoLang" class="font-semibold text-sm text-slate-800 dark:text-slate-200">O'zbek, Rus, Ingliz</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistika kartochkalari -->
+                <div class="lg:col-span-5 grid grid-cols-2 gap-4">
+                    <div class="p-6 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg">
+                        <i class="fa-solid fa-calendar-check text-2xl text-blue-200 mb-3"></i>
+                        <div data-editable="statExp" class="text-3xl sm:text-4xl font-extrabold">6+</div>
+                        <div class="text-xs sm:text-sm text-blue-100 mt-1">Yillik ish tajribasi</div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 shadow-sm">
+                        <i class="fa-solid fa-folder-tree text-2xl text-blue-600 dark:text-blue-400 mb-3"></i>
+                        <div data-editable="statProjects" class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">45+</div>
+                        <div class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Tugallangan loyihalar</div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 shadow-sm">
+                        <i class="fa-solid fa-building-circle-check text-2xl text-emerald-600 dark:text-emerald-400 mb-3"></i>
+                        <div data-editable="statClients" class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">20+</div>
+                        <div class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Doimiy hamkor korxonalar</div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 shadow-sm">
+                        <i class="fa-solid fa-certificate text-2xl text-amber-500 mb-3"></i>
+                        <div data-editable="statCerts" class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">100%</div>
+                        <div class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Hisobotlar aniqligi</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. KO'NIKMALAR (SKILLS) -->
+    <section id="skills" class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-14">
+                <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Mutaxassislik</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mt-2">Kasbiy ko'nikmalar</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-3">Faoliyatimda foydalanadigan asosiy dasturlar va professional bilimlar</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Ko'nikma 1 -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/70 dark:border-slate-800 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                <i class="fa-solid fa-calculator"></i>
+                            </div>
+                            <div>
+                                <h4 data-editable="skill1Name" class="font-bold text-slate-900 dark:text-white">1C:Buxgalteriya 8.3 & Soliq hisobotlari</h4>
+                                <span data-editable="skill1Sub" class="text-xs text-slate-400">My.soliq.uz, Didox, E-faktura</span>
+                            </div>
+                        </div>
+                        <span data-editable="skill1Pct" class="text-sm font-bold text-blue-600 dark:text-blue-400">95%</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full" style="width: 95%"></div>
+                    </div>
+                </div>
+
+                <!-- Ko'nikma 2 -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/70 dark:border-slate-800 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                <i class="fa-solid fa-file-excel"></i>
+                            </div>
+                            <div>
+                                <h4 data-editable="skill2Name" class="font-bold text-slate-900 dark:text-white">Microsoft Excel & Moliyaviy Modellashtirish</h4>
+                                <span data-editable="skill2Sub" class="text-xs text-slate-400">Pivot jadvallar, KPI, P&L va CashFlow</span>
+                            </div>
+                        </div>
+                        <span data-editable="skill2Pct" class="text-sm font-bold text-emerald-600 dark:text-emerald-400">92%</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style="width: 92%"></div>
+                    </div>
+                </div>
+
+                <!-- Ko'nikma 3 -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/70 dark:border-slate-800 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                            </div>
+                            <div>
+                                <h4 data-editable="skill3Name" class="font-bold text-slate-900 dark:text-white">Soliq qonunchiligi va Audit</h4>
+                                <span data-editable="skill3Sub" class="text-xs text-slate-400">QQS, Aylanma soliq, JShODS optimallashtirish</span>
+                            </div>
+                        </div>
+                        <span data-editable="skill3Pct" class="text-sm font-bold text-amber-600 dark:text-amber-400">90%</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full" style="width: 90%"></div>
+                    </div>
+                </div>
+
+                <!-- Ko'nikma 4 -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/70 dark:border-slate-800 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <h4 data-editable="skill4Name" class="font-bold text-slate-900 dark:text-white">Biznes-reja va Investitsion tahlil</h4>
+                                <span data-editable="skill4Sub" class="text-xs text-slate-400">Bank kreditlari uchun TEO va moliyaviy prognoz</span>
+                            </div>
+                        </div>
+                        <span data-editable="skill4Pct" class="text-sm font-bold text-purple-600 dark:text-purple-400">85%</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-purple-600 to-pink-500 rounded-full" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. LOYIHALAR / PORTFOLIO (PROJECTS) -->
+    <section id="projects" class="py-20 bg-white dark:bg-slate-900/60 border-y border-slate-200/60 dark:border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-14">
+                <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Portfolio</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mt-2">Amalga oshirilgan loyihalar</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-3">Muvaffaqiyatli yakunlangan ishlar va tizimlashtirilgan loyihalar namunasi</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="projects-grid">
+                <!-- Loyiha 1 -->
+                <div class="bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 overflow-hidden flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-xl transition duration-300">
+                    <div>
+                        <div class="h-44 bg-gradient-to-br from-blue-600 to-indigo-700 p-6 flex items-center justify-center relative overflow-hidden">
+                            <i class="fa-solid fa-chart-pie text-5xl text-white/90 group-hover:scale-110 transition duration-300"></i>
+                            <span class="absolute top-3 right-3 text-[11px] font-semibold bg-white/20 text-white px-2.5 py-1 rounded-full backdrop-blur-sm">Moliya</span>
+                        </div>
+                        <div class="p-5">
+                            <h3 data-editable="proj1Title" class="font-bold text-lg text-slate-900 dark:text-white mb-2">Savdo tarmog'i uchun 1C avtomatizatsiyasi</h3>
+                            <p data-editable="proj1Short" class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+                                12 ta filialga ega chakana savdo tarmog'ining ombor va buxgalteriya hisobini yagona 1C bazasiga birlashtirish loyihasi.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-5">
+                        <button onclick="openProjectModal(0)" class="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-700 hover:bg-blue-600 dark:hover:bg-blue-600 text-slate-800 dark:text-white hover:text-white border border-slate-200 dark:border-slate-600 font-semibold text-xs transition flex items-center justify-center gap-2">
+                            <span>Batafsil ko'rish</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loyiha 2 -->
+                <div class="bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 overflow-hidden flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-xl transition duration-300">
+                    <div>
+                        <div class="h-44 bg-gradient-to-br from-emerald-500 to-teal-700 p-6 flex items-center justify-center relative overflow-hidden">
+                            <i class="fa-solid fa-file-invoice-dollar text-5xl text-white/90 group-hover:scale-110 transition duration-300"></i>
+                            <span class="absolute top-3 right-3 text-[11px] font-semibold bg-white/20 text-white px-2.5 py-1 rounded-full backdrop-blur-sm">Audit</span>
+                        </div>
+                        <div class="p-5">
+                            <h3 data-editable="proj2Title" class="font-bold text-lg text-slate-900 dark:text-white mb-2">Ishlab chiqarish korxonasi soliq auditi</h3>
+                            <p data-editable="proj2Short" class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+                                3 yillik buxgalteriya hujjatlarini to'liq tiklash, QQS hisob-kitoblarini tekshirish va soliq xavflarini bartaraf etish.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-5">
+                        <button onclick="openProjectModal(1)" class="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-700 hover:bg-blue-600 dark:hover:bg-blue-600 text-slate-800 dark:text-white hover:text-white border border-slate-200 dark:border-slate-600 font-semibold text-xs transition flex items-center justify-center gap-2">
+                            <span>Batafsil ko'rish</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loyiha 3 -->
+                <div class="bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 overflow-hidden flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-xl transition duration-300">
+                    <div>
+                        <div class="h-44 bg-gradient-to-br from-amber-500 to-orange-600 p-6 flex items-center justify-center relative overflow-hidden">
+                            <i class="fa-solid fa-table-columns text-5xl text-white/90 group-hover:scale-110 transition duration-300"></i>
+                            <span class="absolute top-3 right-3 text-[11px] font-semibold bg-white/20 text-white px-2.5 py-1 rounded-full backdrop-blur-sm">Tahlil</span>
+                        </div>
+                        <div class="p-5">
+                            <h3 data-editable="proj3Title" class="font-bold text-lg text-slate-900 dark:text-white mb-2">Rahbarlar uchun Excel Dashboard tizimi</h3>
+                            <p data-editable="proj3Short" class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+                                Kunlik tushum, xarajatlar, debitorlik qarzdorligi va sof foydani real vaqtda ko'rsatuvchi avtomatik boshqaruv paneli.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-5">
+                        <button onclick="openProjectModal(2)" class="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-700 hover:bg-blue-600 dark:hover:bg-blue-600 text-slate-800 dark:text-white hover:text-white border border-slate-200 dark:border-slate-600 font-semibold text-xs transition flex items-center justify-center gap-2">
+                            <span>Batafsil ko'rish</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loyiha 4 -->
+                <div class="bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 overflow-hidden flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-xl transition duration-300">
+                    <div>
+                        <div class="h-44 bg-gradient-to-br from-purple-600 to-pink-600 p-6 flex items-center justify-center relative overflow-hidden">
+                            <i class="fa-solid fa-laptop-code text-5xl text-white/90 group-hover:scale-110 transition duration-300"></i>
+                            <span class="absolute top-3 right-3 text-[11px] font-semibold bg-white/20 text-white px-2.5 py-1 rounded-full backdrop-blur-sm">Veb-ilova</span>
+                        </div>
+                        <div class="p-5">
+                            <h3 data-editable="proj4Title" class="font-bold text-lg text-slate-900 dark:text-white mb-2">Buxgalteriya Pro hisob-kitob veb-tizimi</h3>
+                            <p data-editable="proj4Short" class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+                                Kichik biznes va YaTTlar uchun kirim-chiqim nazorati hamda O'zbekiston soliq kalkulyatorini o'z ichiga olgan veb-dastur.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-5">
+                        <button onclick="openProjectModal(3)" class="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-700 hover:bg-blue-600 dark:hover:bg-blue-600 text-slate-800 dark:text-white hover:text-white border border-slate-200 dark:border-slate-600 font-semibold text-xs transition flex items-center justify-center gap-2">
+                            <span>Batafsil ko'rish</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. BOG'LANISH (CONTACT) -->
+    <section id="contact" class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-14">
+                <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Aloqa</span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mt-2">Men bilan bog'laning</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-3">Hamkorlik, maslahat yoki savollaringiz bo'lsa, istalgan vaqtda murojaat qilishingiz mumkin</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Aloqa ma'lumotlari -->
+                <div class="lg:col-span-5 space-y-4">
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center gap-4 shadow-sm">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-phone text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-400">Telefon raqam</div>
+                            <div data-editable="contactPhone" class="font-bold text-slate-900 dark:text-white">+998 (90) 123-45-67</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center gap-4 shadow-sm">
+                        <div class="w-12 h-12 rounded-xl bg-sky-50 dark:bg-sky-950 text-sky-500 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-brands fa-telegram text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-400">Telegram</div>
+                            <div data-editable="contactTelegram" class="font-bold text-slate-900 dark:text-white">@azizbek_buxgalter</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center gap-4 shadow-sm">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-envelope text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-400">Elektron pochta</div>
+                            <div data-editable="contactEmail" class="font-bold text-slate-900 dark:text-white">azizbek.karimov@mail.uz</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center gap-4 shadow-sm">
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-location-dot text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-400">Manzil</div>
+                            <div data-editable="contactAddress" class="font-bold text-slate-900 dark:text-white">Toshkent sh., Yunusobod tumani</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Xabar yuborish formasi -->
+                <div class="lg:col-span-7 bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-200/70 dark:border-slate-800 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">Tezkor xabar yuborish</h3>
+                    <form id="contact-form" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Ismingiz</label>
+                                <input type="text" id="sender-name" required placeholder="Ismingizni kiriting" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 outline-none text-sm transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Telefon yoki Telegram</label>
+                                <input type="text" id="sender-contact" required placeholder="+998 90 ... yoki @username" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 outline-none text-sm transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Xabar matni</label>
+                            <textarea id="sender-message" rows="4" required placeholder="Savolingiz yoki taklifingizni yozing..." class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 outline-none text-sm transition resize-none"></textarea>
+                        </div>
+                        <button type="submit" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Xabarni yuborish
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200/70 dark:border-slate-800 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
+            <div>
+                © 2026 <span data-editable="footerName" class="font-semibold text-slate-800 dark:text-slate-200">Azizbek Karimov</span>. Barcha huquqlar himoyalangan.
+            </div>
+            <div class="flex items-center gap-4 text-xs">
+                <button onclick="toggleEditMode()" class="text-blue-600 dark:text-blue-400 hover:underline">
+                    <i class="fa-solid fa-pen-to-square mr-1"></i> Sahifani tahrirlash
+                </button>
+                <span>•</span>
+                <a href="#" class="hover:text-slate-800 dark:hover:text-white transition">Yuqoriga <i class="fa-solid fa-arrow-up ml-1"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- LOYIHA BATAFSIL MODALI -->
+    <div id="project-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl transform transition-all relative">
+            <button onclick="closeProjectModal()" class="absolute top-5 right-5 w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div id="modal-badge" class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 mb-3">
+                Kategoriya
+            </div>
+            <h3 id="modal-title" class="text-2xl font-bold text-slate-900 dark:text-white mb-3">Loyiha nomi</h3>
+            <p id="modal-desc" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
+                Loyiha haqida batafsil ma'lumot.
+            </p>
+            <div class="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-100 dark:border-slate-700/60 mb-6">
+                <div class="text-xs font-semibold text-slate-400 uppercase mb-2">Erishilgan natijalar:</div>
+                <ul id="modal-results" class="space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
+                    <!-- JS orqali to'ldiriladi -->
+                </ul>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeProjectModal()" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition">
+                    Yopish
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RASM URL KIRITISH MODALI -->
+    <div id="image-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Profil rasmini yangilash</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Yangi rasmning internet manzilini (URL) kiriting:</p>
+            <input type="url" id="new-image-url" placeholder="https://example.com/rasm.jpg" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 outline-none text-sm mb-4">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeImageModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium">Bekor qilish</button>
+                <button onclick="applyProfileImage()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">Saqlash</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. LOYIHALAR MA'LUMOTLARI ---
+        const projectsDetails = [
+            {
+                category: "1C & Avtomatlashtirish",
+                title: "Savdo tarmog'i uchun 1C avtomatizatsiyasi",
+                desc: "12 ta filialga ega bo'lgan yirik chakana savdo tarmog'ida tovarlar harakati, kassa operatsiyalari va ombor qoldiqlarini real vaqt rejimida nazorat qilish uchun 1C:Buxgalteriya 8.3 tizimi joriy etildi.",
+                results: [
+                    "Hisobot tayyorlash vaqti 70% ga qisqardi",
+                    "Ombor kamomadlari nolga tushirildi",
+                    "E-faktura va onlayn-NKM tizimlari integratsiya qilindi"
+                ]
+            },
+            {
+                category: "Soliq Auditi",
+                title: "Ishlab chiqarish korxonasi soliq auditi",
+                desc: "Mebel ishlab chiqarishga ixtisoslashgan MChJning 3 yillik moliyaviy-xo'jalik faoliyati to'liq auditdan o'tkazildi, birlamchi hujjatlar tiklandi va QQS hisobotlari qayta topshirildi.",
+                results: [
+                    "180 mln so'mlik ortiqcha soliq xavfi bartaraf etildi",
+                    "Tannarx kalkulyatsiyasi aniq shakllantirildi",
+                    "Soliq tekshiruvidan jarimalarsiz muvaffaqiyatli o'tildi"
+                ]
+            },
+            {
+                category: "Moliyaviy Tahlil",
+                title: "Rahbarlar uchun Excel Dashboard tizimi",
+                desc: "Kompaniya ta'sischilari uchun murakkab buxgalteriya raqamlarini oddiy va tushunarli grafiklar ko'rinishida aks ettiruvchi avtomatlashtirilgan Excel boshqaruv paneli yaratildi.",
+                results: [
+                    "Oylik P&L (Foyda va zarar) hamda CashFlow hisobotlari",
+                    "Har bir mahsulot turi bo'yicha rentabellik tahlili",
+                    "Xarajatlarni 15% gacha optimallashtirish imkoniyati"
+                ]
+            },
+            {
+                category: "Raqamli Yechimlar",
+                title: "Buxgalteriya Pro hisob-kitob veb-tizimi",
+                desc: "Kichik biznes vakillari va yakka tartibdagi tadbirkorlar uchun kundalik kirim-chiqimlarni yuritish va O'zbekiston soliq stavkalari bo'yicha tezkor hisob-kitob qilish veb-ilovasi.",
+                results: [
+                    "Aylanma solig'i (4%), QQS (12%) va JShODS kalkulyatori",
+                    "Ma'lumotlarni Excel (CSV) formatida eksport qilish",
+                    "Mobil va kompyuter qurilmalariga to'liq moslashuvchan dizayn"
+                ]
+            }
+        ];
+
+        // --- 2. STORAGE VA TAHRIRLASH REJIMI ---
+        const PORTFOLIO_STORAGE_KEY = 'uz_personal_portfolio_v1';
+        let isEditMode = false;
+
+        // Xabarnoma (Toast)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-blue-600';
+            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-info';
+            
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-sm font-medium transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Saqlangan matnlarni yuklash
+        function loadPortfolioData() {
+            const saved = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
+            if (!saved) return;
+
+            const data = JSON.parse(saved);
+            document.querySelectorAll('[data-editable]').forEach(el => {
+                const key = el.getAttribute('data-editable');
+                if (data[key] !== undefined) {
+                    el.innerText = data[key];
+                }
+            });
+
+            if (data.profileImg) {
+                document.getElementById('profile-img').src = data.profileImg;
+            }
+            updateLogoInitial();
+        }
+
+        // Barcha tahrirlarni saqlash
+        function saveAllEdits() {
+            const data = {};
+            document.querySelectorAll('[data-editable]').forEach(el => {
+                const key = el.getAttribute('data-editable');
+                data[key] = el.innerText.trim();
+            });
+            data.profileImg = document.getElementById('profile-img').src;
+
+            localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(data));
+            updateLogoInitial();
+            showToast("Barcha o'zgarishlar brauzer xotirasiga saqlandi!");
+            
+            if (isEditMode) {
+                toggleEditMode();
+            }
+        }
+
+        // Asl holiga qaytarish
+        function resetPortfolioData() {
+            localStorage.removeItem(PORTFOLIO_STORAGE_KEY);
+            location.reload();
+        }
+
+        // Tahrirlash rejimini yoqish/o'chirish
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const body = document.body;
+            const banner = document.getElementById('edit-banner');
+            const btnText = document.getElementById('edit-btn-text');
+            const editables = document.querySelectorAll('[data-editable]');
+
+            if (isEditMode) {
+                body.classList.add('editable-active');
+                banner.classList.remove('hidden');
+                btnText.innerText = "Yakunlash";
+                editables.forEach(el => el.setAttribute('contenteditable', 'true'));
+                showToast("Tahrirlash rejimi yoqildi. Matn ustiga bosib o'zgartiring.", "info");
+            } else {
+                body.classList.remove('editable-active');
+                banner.classList.add('hidden');
+                btnText.innerText = "Tahrirlash";
+                editables.forEach(el => el.removeAttribute('contenteditable'));
+            }
+        }
+
+        function updateLogoInitial() {
+            const brand = document.querySelector('[data-editable="brandName"]').innerText.trim();
+            if (brand.length > 0) {
+                document.getElementById('logo-initial').innerText = brand[0].toUpperCase();
+            }
+        }
+
+        // --- 3. TUNGI / KUNDUZGI REJIM (DARK MODE) ---
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            html.classList.toggle('dark');
+            
+            if (html.classList.contains('dark')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                localStorage.setItem('portfolio_theme', 'dark');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                localStorage.setItem('portfolio_theme', 'light');
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('portfolio_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+            }
+        }
+
+        // --- 4. MOBIL MENYU VA MODALLAR ---
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function openProjectModal(index) {
+            const proj = projectsDetails[index];
+            document.getElementById('modal-badge').innerText = proj.category;
+            document.getElementById('modal-title').innerText = proj.title;
+            document.getElementById('modal-desc').innerText = proj.desc;
+            
+            const resultsList = document.getElementById('modal-results');
+            resultsList.innerHTML = proj.results.map(item => `
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-500 mt-1 text-xs"></i>
+                    <span>${item}</span>
+                </li>
+            `).join('');
+
+            const modal = document.getElementById('project-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeProjectModal() {
+            const modal = document.getElementById('project-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Profil rasmini o'zgartirish modali
+        function changeProfileImage() {
+            document.getElementById('new-image-url').value = document.getElementById('profile-img').src;
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function applyProfileImage() {
+            const url = document.getElementById('new-image-url').value.trim();
+            if (url) {
+                document.getElementById('profile-img').src = url;
+                saveAllEdits();
+                closeImageModal();
+            }
+        }
+
+        // Bog'lanish formasi
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('sender-name').value.trim();
+            showToast(`Rahmat, ${name}! Xabaringiz muvaffaqiyatli yuborildi.`);
+            this.reset();
+        });
+
+        // Sahifa yuklanganda ishga tushirish
+        window.onload = function() {
+            initTheme();
+            loadPortfolioData();
+        };
+    </script>
+</body>
+</html>
